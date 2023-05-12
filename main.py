@@ -4,10 +4,12 @@ import time
 import random
 pygame.font.init()
 
+# Set up the window
 width, height = 750, 750
 window = pygame.display.set_mode((width, height))
 pygame.display.set_caption("Space Invaders")
 
+# Load images
 red_spaceship = pygame.image.load(os.path.join("assets", "red.png"))
 green_spaceship = pygame.image.load(os.path.join("assets", "green.png"))
 blue_spaceship = pygame.image.load(os.path.join("assets", "extra.png"))
@@ -24,27 +26,74 @@ BG = pygame.transform.scale(pygame.image.load(os.path.join("assets", "black-back
 
 class Laser:
     def __init__(self, x, y, img):
+        """
+        Initialize a Laser object.
+
+        Args:
+            x (int): X-coordinate of the laser.
+            y (int): Y-coordinate of the laser.
+            img (pygame.Surface): Laser image.
+        """
         self.x = x
         self.y = y
         self.img = img
         self.mask = pygame.mask.from_surface(self.img)
 
     def draw(self, window):
+        """
+        Draw the laser on the window.
+
+        Args:
+            window (pygame.Surface): The game window surface.
+        """
         window.blit(self.img, (self.x, self.y))
 
     def move(self, vel):
+        """
+        Move the laser vertically.
+
+        Args:
+            vel (int): Velocity of the laser.
+        """
         self.y += vel
 
     def off_screen(self, height):
-        return not(self.y <= height and self.y >= 0)
+        """
+        Check if the laser is off the screen.
+
+        Args:
+            height (int): Height of the game window.
+
+        Returns:
+            bool: True if the laser is off the screen, False otherwise.
+        """
+        return not (self.y <= height and self.y >= 0)
 
     def collision(self, obj):
+        """
+        Check if the laser collides with another object.
+
+        Args:
+            obj: The object to check collision against.
+
+        Returns:
+            bool: True if the laser collides with the object, False otherwise.
+        """
         return collide(self, obj)
+
 
 class Ship:
     COOLDOWN = 60
 
     def __init__(self, x, y, health=100):
+        """
+        Initialize a Ship object.
+
+        Args:
+            x (int): X-coordinate of the ship.
+            y (int): Y-coordinate of the ship.
+            health (int, optional): Health of the ship. Defaults to 100.
+        """
         self.x = x
         self.y = y
         self.health = health
@@ -54,11 +103,25 @@ class Ship:
         self.cool_down_counter = 0
 
     def draw(self, window):
+        """
+        Draw the ship and lasers on the window.
+
+        Args:
+            window (pygame.Surface): The game window surface.
+        """
         window.blit(self.ship_img, (self.x, self.y))
         for laser in self.lasers:
             laser.draw(window)
 
     def move_lasers(self, vel, obj):
+        """
+        Move the lasers and handle collisions.
+
+        Args:
+            vel (int): Velocity of the lasers.
+            obj: The object to check collision against.
+        """
+        
         self.cooldown()
         for laser in self.lasers:
             laser.move(vel)
@@ -69,21 +132,39 @@ class Ship:
                 self.lasers.remove(laser)
 
     def cooldown(self):
+        """
+        Handle the cooldown of the ship's lasers.
+        """
         if self.cool_down_counter >= self.COOLDOWN:
             self.cool_down_counter = 0
         elif self.cool_down_counter > 0:
             self.cool_down_counter += 1
 
     def shoot(self):
+        """
+        Create a laser object and add it to the ship's lasers list.
+        """
         if self.cool_down_counter == 0:
             laser = Laser(self.x, self.y, self.laser_img)
             self.lasers.append(laser)
             self.cool_down_counter = 1
 
     def get_width(self):
+        """
+        Get the width of the ship's image.
+
+        Returns:
+            int: Width of the ship's image.
+        """
         return self.ship_img.get_width()
 
     def get_height(self):
+        """
+        Get the height of the ship's image.
+
+        Returns:
+            int: Height of the ship's image.
+        """
         return self.ship_img.get_height()
 
 
@@ -134,10 +215,22 @@ class Enemy(Ship):
     def move(self, vel):
         self.y += vel
 
+
 def collide(obj1, obj2):
+    """
+    Check if two objects collide.
+
+    Args:
+        obj1: The first object.
+        obj2: The second object.
+
+    Returns:
+        bool: True if obj1 collides with obj2, False otherwise.
+    """
     offset_x = obj2.x - obj1.x
     offset_y = obj2.y - obj1.y
     return obj1.mask.overlap(obj2.mask, (offset_x, offset_y)) != None
+
 
 def main():
     run = True
@@ -164,6 +257,7 @@ def main():
     def redraw_window():
         window.blit(BG, (0, 0))
 
+        #Sets up labels for Lives and Score
         lives_label = main_font.render(f"Lives: {lives}", 1, (255,255,255))
         score_label = main_font.render(f"Score: {score}", 1, (255,255,255))
 
@@ -185,6 +279,7 @@ def main():
         clock.tick(FPS)
         redraw_window()
 
+        #Handles logic for players lives
         if lives <= 0 or player.health <= 0:
             lost = True
             lost_count += 1
@@ -195,7 +290,7 @@ def main():
             else:
                 continue
 
-
+        #Logic for each time you kill a wave of enemies
         if len(enemies) == 0:
             level += 1
             wave_length += 3
@@ -207,7 +302,8 @@ def main():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 quit()
-
+        
+        #This allows for player movement and attacks
         keys = pygame.key.get_pressed()
         if keys[pygame.K_a] and player.x - vel > 0:
             player.x -= vel
@@ -219,7 +315,8 @@ def main():
             player.y += vel
         if keys[pygame.K_SPACE]:
             player.shoot()
-
+        
+        #Handles logic for enemies
         for enemy in enemies[:]:
             enemy.move(enemy_vel)
             enemy.move_lasers(laser_vel, player)
@@ -239,6 +336,7 @@ def main():
 
         score = player.move_lasers(-laser_vel, enemies, score)
 
+#function for main menu to run
 def main_menu():
     title_font = pygame.font.SysFont("arial", 70)
     run = True
